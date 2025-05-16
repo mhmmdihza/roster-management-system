@@ -97,3 +97,46 @@ func TestGetAvailableShiftsByTimeRangeAndRole(t *testing.T) {
 		})
 	})
 }
+
+func TestDeleteShiftByID(t *testing.T) {
+	_withTestDatabase(t, func(st *Storage) {
+		// Setup a role and employee
+		roleID := 1
+		employeeID, err := st.CreateNewEmployee("Tester", "ACTIVE", roleID)
+		assert.NoError(t, err)
+
+		// Create a shift
+		start := time.Date(2025, 7, 15, 9, 0, 0, 0, time.UTC)
+		end := time.Date(2025, 7, 15, 17, 0, 0, 0, time.UTC)
+
+		shiftID, err := st.CreateNewShiftSchedule(roleID, start, end)
+		assert.NoError(t, err)
+		assert.Greater(t, shiftID, 0)
+
+		// Create a shift request for that shift
+		shiftReqID, err := st.CreateShiftRequest(employeeID, shiftID)
+		assert.NoError(t, err)
+		assert.Greater(t, shiftReqID, 0)
+
+		// Delete the shift
+		err = st.DeleteShiftById(shiftID)
+		assert.NoError(t, err)
+
+		// Verify shift is deleted using GetAvailableShiftsByTimeRangeAndRole
+		availableShifts, err := st.GetAvailableShiftsByTimeRangeAndRole(start.Add(-time.Hour), end.Add(time.Hour), roleID)
+		assert.NoError(t, err)
+		for _, s := range availableShifts {
+			assert.NotEqual(t, shiftID, s.ID, "Deleted shift should not be in available shifts")
+		}
+
+		// Verify shift request is deleted using ListShiftRequestsByFilterAndTimeRange
+		filter := ListShiftRequestFilter{
+			EmployeeID: employeeID,
+			ShiftID:    shiftID,
+			RoleID:     roleID,
+		}
+		requests, err := st.ListShiftRequestsByFilterAndTimeRange(filter, start.Add(-time.Hour), end.Add(time.Hour))
+		assert.NoError(t, err)
+		assert.Empty(t, requests, "Shift request for deleted shift should not exist")
+	})
+}

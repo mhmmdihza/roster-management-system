@@ -41,3 +41,9 @@ func (s *Storage) GetAvailableShiftsByTimeRangeAndRole(start, end time.Time, rol
 	err := s.db.Select(&shifts, query, start, end, roleId)
 	return shifts, err
 }
+
+func (s *Storage) DeleteShiftById(shiftId int) error {
+	query := `DELETE FROM shifts WHERE id = $1`
+	_, err := s.db.Exec(query, shiftId)
+	return err
+}
