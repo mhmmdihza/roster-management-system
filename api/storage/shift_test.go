@@ -28,3 +28,72 @@ func TestCreateShift(t *testing.T) {
 		})
 	})
 }
+
+func TestGetAvailableShiftsByTimeRangeAndRole(t *testing.T) {
+	_withTestDatabase(t, func(st *Storage) {
+		roleID := 1
+
+		// Setup shifts (some within the range, some outside)
+		shifts := []struct {
+			role  int
+			start time.Time
+			end   time.Time
+		}{
+			{roleID, time.Date(2025, 5, 15, 9, 0, 0, 0, time.UTC), time.Date(2025, 5, 15, 17, 0, 0, 0, time.UTC)},
+			{roleID, time.Date(2025, 5, 15, 18, 0, 0, 0, time.UTC), time.Date(2025, 5, 15, 22, 0, 0, 0, time.UTC)},
+			{2, time.Date(2025, 5, 16, 9, 0, 0, 0, time.UTC), time.Date(2025, 5, 16, 17, 0, 0, 0, time.UTC)}, // different role
+		}
+
+		shiftIDs := make([]int, 0, len(shifts))
+		for _, s := range shifts {
+			id, err := st.CreateNewShiftSchedule(s.role, s.start, s.end)
+			assert.NoError(t, err)
+			assert.Greater(t, id, 0)
+			shiftIDs = append(shiftIDs, id)
+		}
+
+		// Create employees for shift requests
+		employeeID, err := st.CreateNewEmployee("Test Emp", "ACTIVE", roleID)
+		assert.NoError(t, err)
+		assert.Greater(t, employeeID, 0)
+
+		// Create a shift request with APPROVED status for the first shift
+		reqID, err := st.CreateShiftRequest(employeeID, shiftIDs[0])
+		assert.NoError(t, err)
+		assert.Greater(t, reqID, 0)
+
+		err = st.UpdateShiftRequestStatusByShiftID(shiftIDs[0], "APPROVED")
+		assert.NoError(t, err)
+
+		start := time.Date(2025, 5, 15, 0, 0, 0, 0, time.UTC)
+		end := time.Date(2025, 5, 15, 23, 59, 59, 0, time.UTC)
+
+		t.Run("returns error if start time is zero", func(t *testing.T) {
+			_, err := st.GetAvailableShiftsByTimeRangeAndRole(time.Time{}, end, roleID)
+			assert.Error(t, err)
+		})
+
+		t.Run("returns error if end time is zero", func(t *testing.T) {
+			_, err := st.GetAvailableShiftsByTimeRangeAndRole(start, time.Time{}, roleID)
+			assert.Error(t, err)
+		})
+
+		t.Run("returns available shifts excluding approved shift requests", func(t *testing.T) {
+			shifts, err := st.GetAvailableShiftsByTimeRangeAndRole(start, end, roleID)
+			assert.NoError(t, err)
+
+			// The first shift is approved and should be excluded, so only one shift should be returned
+			assert.Len(t, shifts, 1)
+
+			// Check the returned shift is the second shift for the role
+			assert.Equal(t, shiftIDs[1], shifts[0].ID)
+			assert.Equal(t, roleID, shifts[0].RoleID)
+		})
+
+		t.Run("returns empty slice if no shifts match role", func(t *testing.T) {
+			shifts, err := st.GetAvailableShiftsByTimeRangeAndRole(start, end, 9999) // non-existing role
+			assert.NoError(t, err)
+			assert.Empty(t, shifts)
+		})
+	})
+}
