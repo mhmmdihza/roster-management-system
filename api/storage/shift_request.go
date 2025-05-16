@@ -38,6 +38,16 @@ func (s *Storage) CreateShiftRequest(employeeId, shiftId int) (int, error) {
 	return id, err
 }
 
+func (s *Storage) UpdateShiftRequestStatusByShiftID(shiftId int, status string) error {
+	query := `
+		UPDATE shift_requests
+		SET status = $1
+		WHERE shift_id = $2
+	`
+	_, err := s.db.Exec(query, status, shiftId)
+	return err
+}
+
 func (s *Storage) ListShiftRequestsByFilterAndTimeRange(filter ListShiftRequestFilter,
 	start time.Time,
 	end time.Time) ([]ShiftRequestWithShiftDetails, error) {

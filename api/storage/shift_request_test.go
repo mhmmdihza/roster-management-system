@@ -207,3 +207,51 @@ func TestListShiftRequestsByFilterAndTimeRange(t *testing.T) {
 		})
 	})
 }
+
+func TestUpdateShiftRequestStatusByShiftID(t *testing.T) {
+	_withTestDatabase(t, func(st *Storage) {
+		// Setup: Create an employee
+		employeeID, err := st.CreateNewEmployee("Test User", "ACTIVE", 1)
+		assert.NoError(t, err)
+		assert.Greater(t, employeeID, 0)
+
+		// Setup: Create a shift
+		shiftID, err := st.CreateNewShiftSchedule(1, time.Now(), time.Now().Add(8*time.Hour))
+		assert.NoError(t, err)
+		assert.Greater(t, shiftID, 0)
+
+		// Setup: Create a shift request (status defaults to 'PENDING')
+		shiftRequestID, err := st.CreateShiftRequest(employeeID, shiftID)
+		assert.NoError(t, err)
+		assert.Greater(t, shiftRequestID, 0)
+
+		// Valid statuses to test
+		validStatuses := []string{"APPROVED", "REJECTED"}
+
+		for _, status := range validStatuses {
+			t.Run("update status to "+status, func(t *testing.T) {
+				err := st.UpdateShiftRequestStatusByShiftID(shiftID, status)
+				assert.NoError(t, err)
+
+				// Verify status was updated in DB
+				var currentStatus string
+				err = st.db.Get(&currentStatus, "SELECT status FROM shift_requests WHERE shift_id = $1", shiftID)
+				assert.NoError(t, err)
+				assert.Equal(t, status, currentStatus)
+			})
+		}
+
+		t.Run("update status with invalid value returns error", func(t *testing.T) {
+			invalidStatus := "INVALID_STATUS"
+
+			err := st.UpdateShiftRequestStatusByShiftID(shiftID, invalidStatus)
+			assert.Error(t, err)
+
+			// Verify status was NOT updated
+			var currentStatus string
+			err = st.db.Get(&currentStatus, "SELECT status FROM shift_requests WHERE shift_id = $1", shiftID)
+			assert.NoError(t, err)
+			assert.NotEqual(t, invalidStatus, currentStatus)
+		})
+	})
+}
