@@ -25,7 +25,7 @@ func InitLogger(level logrus.Level) {
 // It should be called only after InitLogger.
 func Log() *logrus.Logger {
 	if logger == nil {
-		panic("logger not initialized: call util.InitLogger(level) in main first")
+		InitLogger(logrus.InfoLevel)
 	}
 	return logger
 }

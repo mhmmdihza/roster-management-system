@@ -28,7 +28,7 @@
           },
           "primary_role": {
             "description": "refers to the main job or task someone is assigned to do",
-            "type": "string"
+            "type": "integer"
           }
         },
         "required": ["email","role","primary_role"]
