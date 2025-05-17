@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -13,14 +14,14 @@ type Shift struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
-func (s *Storage) CreateNewShiftSchedule(roleId int, startTime, endTime time.Time) (int, error) {
+func (s *Storage) CreateNewShiftSchedule(ctx context.Context, roleId int, startTime, endTime time.Time) (int, error) {
 	var id int
 	query := `INSERT INTO shifts (role_id, start_time, end_time) VALUES ($1, $2, $3) RETURNING id`
-	err := s.db.QueryRow(query, roleId, startTime, endTime).Scan(&id)
+	err := s.db.QueryRowContext(ctx, query, roleId, startTime, endTime).Scan(&id)
 	return id, err
 }
 
-func (s *Storage) GetAvailableShiftsByTimeRangeAndRole(start, end time.Time, roleId int) ([]Shift, error) {
+func (s *Storage) GetAvailableShiftsByTimeRangeAndRole(ctx context.Context, start, end time.Time, roleId int) ([]Shift, error) {
 	if start.IsZero() || end.IsZero() {
 		return nil, fmt.Errorf("both start and end time must be provided")
 	}
@@ -38,12 +39,12 @@ func (s *Storage) GetAvailableShiftsByTimeRangeAndRole(start, end time.Time, rol
           )
         ORDER BY s.start_time
     `
-	err := s.db.Select(&shifts, query, start, end, roleId)
+	err := s.db.SelectContext(ctx, &shifts, query, start, end, roleId)
 	return shifts, err
 }
 
-func (s *Storage) DeleteShiftById(shiftId int) error {
+func (s *Storage) DeleteShiftById(ctx context.Context, shiftId int) error {
 	query := `DELETE FROM shifts WHERE id = $1`
-	_, err := s.db.Exec(query, shiftId)
+	_, err := s.db.ExecContext(ctx, query, shiftId)
 	return err
 }

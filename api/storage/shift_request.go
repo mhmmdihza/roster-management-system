@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -27,28 +28,28 @@ type ListShiftRequestFilter struct {
 	Status     string
 }
 
-func (s *Storage) CreateShiftRequest(employeeId, shiftId int) (int, error) {
+func (s *Storage) CreateShiftRequest(ctx context.Context, employeeId, shiftId int) (int, error) {
 	var id int
 	query := `
 		INSERT INTO shift_requests (employee_id, shift_id, status)
 		VALUES ($1, $2, 'PENDING')
 		RETURNING id
 	`
-	err := s.db.QueryRow(query, employeeId, shiftId).Scan(&id)
+	err := s.db.QueryRowxContext(ctx, query, employeeId, shiftId).Scan(&id)
 	return id, err
 }
 
-func (s *Storage) UpdateShiftRequestStatusByShiftID(shiftId int, status string) error {
+func (s *Storage) UpdateShiftRequestStatusByShiftID(ctx context.Context, shiftId int, status string) error {
 	query := `
 		UPDATE shift_requests
 		SET status = $1
 		WHERE shift_id = $2
 	`
-	_, err := s.db.Exec(query, status, shiftId)
+	_, err := s.db.ExecContext(ctx, query, status, shiftId)
 	return err
 }
 
-func (s *Storage) ListShiftRequestsByFilterAndTimeRange(filter ListShiftRequestFilter,
+func (s *Storage) ListShiftRequestsByFilterAndTimeRange(ctx context.Context, filter ListShiftRequestFilter,
 	start time.Time,
 	end time.Time) ([]ShiftRequestWithShiftDetails, error) {
 	if start.IsZero() || end.IsZero() {
@@ -100,6 +101,6 @@ func (s *Storage) ListShiftRequestsByFilterAndTimeRange(filter ListShiftRequestF
 	baseQuery += " ORDER BY s.start_time ASC"
 
 	var results []ShiftRequestWithShiftDetails
-	err := s.db.Select(&results, baseQuery, args...)
+	err := s.db.SelectContext(ctx, &results, baseQuery, args...)
 	return results, err
 }
