@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 
 	kratos "github.com/ory/kratos-client-go"
@@ -8,16 +9,29 @@ import (
 
 var ErrAlreadyExists = errors.New("already exists")
 var ErrInvalidEmail = errors.New("invalid email")
+var ErrInvalidPassword = errors.New("invalid password")
+var ErrTraitsKeyNotFound = errors.New("key not found")
+var ErrTraitsInvalidType = errors.New("invalid type")
+var ErrNotFound = errors.New("not found")
+
+type storage interface {
+	CreateNewEmployee(ctx context.Context, name string, status string, roleId int) (int, error)
+
+	NewTransacton(ctx context.Context) (context.Context, error)
+	Commit(ctx context.Context) error
+	Rollback(ctx context.Context) error
+}
 
 type Auth struct {
 	kratosAdmin  *kratos.APIClient
 	kratosPublic *kratos.APIClient
+	storage      storage
 }
 
 type AuthOption func(*Auth) error
 
-func NewAuth(opts ...AuthOption) (*Auth, error) {
-	auth := &Auth{}
+func NewAuth(storage storage, opts ...AuthOption) (*Auth, error) {
+	auth := &Auth{storage: storage}
 	for _, opt := range opts {
 		if err := opt(auth); err != nil {
 			return nil, err

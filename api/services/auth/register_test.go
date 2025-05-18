@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -134,11 +135,180 @@ func TestRegisterNewUser(t *testing.T) {
 		t.Run(sc.name, func(t *testing.T) {
 			server := mockAPIServer(t, []expectedApiRequest{sc.expectedApiRequest}, []mockApiResponse{sc.mockApiResponse})
 			defer server.Close()
-			auth, err := NewAuth(WithKratosAdminURL(server.URL))
+			auth, err := NewAuth(&mockStorage{}, WithKratosAdminURL(server.URL))
 			assert.NoError(t, err)
 			id, err := auth.RegisterNewUser(ctx, sc.funcParams.email, sc.funcParams.primaryRole, sc.funcParams.roleAdmin)
 			assert.Equal(t, sc.expectedError, err)
 			assert.Equal(t, sc.expectedId, id)
+		})
+	}
+}
+
+var dbError = errors.New("db error")
+
+type mockStorage struct{}
+
+// Commit implements storage.
+func (m *mockStorage) Commit(ctx context.Context) error {
+	return nil
+}
+
+// NewTransacton implements storage.
+func (m *mockStorage) NewTransacton(ctx context.Context) (context.Context, error) {
+	return ctx, nil
+}
+
+type rollback struct{}
+
+// Rollback implements storage.
+func (m *mockStorage) Rollback(ctx context.Context) error {
+	if val := ctx.Value(rollback{}); val == nil {
+		panic("unexpected rollback")
+	}
+	return nil
+}
+
+// CreateNewEmployee implements storage.
+func (m *mockStorage) CreateNewEmployee(ctx context.Context, name string, status string, roleId int) (int, error) {
+	if name == "invalid name" {
+		return 0, dbError
+	}
+	return 4, nil
+}
+
+type registerActivateNewUserFuncParam struct {
+	userid   string
+	name     string
+	password string
+}
+
+var scsActivateNewUserApiReqs = []expectedApiRequest{
+	{
+		method: "GET",
+		path:   "/admin/identities/userid",
+	},
+	{
+		method: "PUT",
+		path:   "/admin/identities/userid",
+		body: kratos.UpdateIdentityBody{
+			Credentials: &kratos.IdentityWithCredentials{
+				Password: &kratos.IdentityWithCredentialsPassword{
+					Config: &kratos.IdentityWithCredentialsPasswordConfig{
+						Password: func() *string {
+							pass := "password"
+							return &pass
+						}(),
+					},
+				},
+			},
+			SchemaId: "default",
+			Traits: map[string]interface{}{
+				"employee_id":  "4",
+				"primary_role": 7,
+				"email":        "abc@mail.com",
+				"role":         "employee",
+			},
+			State: activeState,
+		},
+	},
+}
+
+var scsActivateNewUserApiResps = []mockApiResponse{
+	{
+		statusCode: 200,
+		body: kratos.Identity{
+			Id: "userid",
+			Traits: map[string]interface{}{
+				"primary_role": 7,
+				"email":        "abc@mail.com",
+				"role":         "employee",
+			},
+		},
+	},
+	{
+		statusCode: 200,
+	},
+}
+
+var activateNewUserScenario = []struct {
+	name                string
+	mockApiResponses    []mockApiResponse
+	expectedApiRequests []expectedApiRequest
+	expectedError       error
+	expectedRollback    bool
+	funcParams          registerActivateNewUserFuncParam
+}{
+	{
+		name: "success",
+		funcParams: registerActivateNewUserFuncParam{
+			"userid", "name", "password",
+		},
+		expectedApiRequests: scsActivateNewUserApiReqs,
+		mockApiResponses:    scsActivateNewUserApiResps,
+	},
+	{
+		name: "db error",
+		funcParams: registerActivateNewUserFuncParam{
+			"userid", "invalid name", "password",
+		},
+		expectedApiRequests: scsActivateNewUserApiReqs,
+		mockApiResponses: func() []mockApiResponse {
+			mockResp := make([]mockApiResponse, len(scsActivateNewUserApiResps))
+			copy(mockResp, scsActivateNewUserApiResps)
+			// if db CreateNewEmployee throw error, 2nd api/updateIdentity should not happens
+			mockResp[1] = mockApiResponse{
+				statusCode: 500,
+			}
+			return mockResp
+		}(),
+		expectedError:    dbError,
+		expectedRollback: true,
+	},
+	{
+		name: "GetIdentity throw 404 should return error before db createNewEmployee call",
+		funcParams: registerActivateNewUserFuncParam{
+			"userid", "name", "password",
+		},
+		expectedApiRequests: []expectedApiRequest{scsActivateNewUserApiReqs[0]},
+		mockApiResponses: []mockApiResponse{
+			{statusCode: 404},
+		},
+		expectedError: ErrNotFound,
+	},
+
+	{
+		name: "UpdateIdentity throw 400 should return error and rollback db createNewEmployee call",
+		funcParams: registerActivateNewUserFuncParam{
+			"userid", "name", "password",
+		},
+		expectedApiRequests: scsActivateNewUserApiReqs,
+		mockApiResponses: func() []mockApiResponse {
+			mockResp := make([]mockApiResponse, len(scsActivateNewUserApiResps))
+			copy(mockResp, scsActivateNewUserApiResps)
+			mockResp[1] = mockApiResponse{
+				statusCode: 400,
+			}
+			return mockResp
+		}(),
+		expectedError:    ErrInvalidPassword,
+		expectedRollback: true,
+	},
+}
+
+func TestActivateNewUser(t *testing.T) {
+	t.Parallel()
+	for _, sc := range activateNewUserScenario {
+		t.Run(sc.name, func(t *testing.T) {
+			ctx := context.Background()
+			if sc.expectedRollback {
+				ctx = context.WithValue(ctx, rollback{}, "...")
+			}
+			server := mockAPIServer(t, sc.expectedApiRequests, sc.mockApiResponses)
+			defer server.Close()
+			auth, err := NewAuth(&mockStorage{}, WithKratosAdminURL(server.URL))
+			assert.NoError(t, err)
+			err = auth.ActivateNewUser(ctx, sc.funcParams.userid, sc.funcParams.name, sc.funcParams.password)
+			assert.Equal(t, sc.expectedError, err)
 		})
 	}
 }
