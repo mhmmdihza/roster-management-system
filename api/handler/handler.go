@@ -1,12 +1,17 @@
 package handler
 
-import "github.com/gin-gonic/gin"
+import (
+	"payd/handler/public"
+	"payd/services/auth"
 
-type Auth interface{}
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+)
 
 type Handler struct {
 	*gin.Engine
-	auth Auth
+	auth      auth.AuthInterface
+	validator *validator.Validate
 }
 
 type Option func(*Handler) error
@@ -21,16 +26,23 @@ func NewHandler(opts ...Option) (*Handler, error) {
 		}
 	}
 
-	public := router.Group("/")
-	public.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
-	})
+	if err := public.PublicHandler(router.Group("/"),
+		public.WithAuthSvc(handler.auth), public.WithValidator(handler.validator)); err != nil {
+		return nil, err
+	}
 	return handler, nil
 }
 
-func WithAuthSvc(auth Auth) Option {
+func WithAuthSvc(auth auth.AuthInterface) Option {
 	return func(s *Handler) error {
 		s.auth = auth
+		return nil
+	}
+}
+
+func WithValidator(validator *validator.Validate) Option {
+	return func(s *Handler) error {
+		s.validator = validator
 		return nil
 	}
 }

@@ -13,25 +13,6 @@ import (
 var inactiveState = "inactive"
 var activeState = "active"
 
-type Identity struct {
-	ID           string // kratos userid
-	Email        string // registered email
-	EmployeeId   string // db employee id
-	EmployeeName string // db employee name
-	Role         string // privilege-based(admin/employee)
-	PrimaryRole  int    // responsibility-based from db role_id
-}
-
-// kratos traits schema
-func (i *Identity) GetTraits() map[string]interface{} {
-	return map[string]interface{}{
-		"email":        i.Email,
-		"role":         i.Role,
-		"primary_role": i.PrimaryRole,
-		"employee_id":  i.EmployeeId,
-	}
-}
-
 // register a new user in an inactive state
 // later, the user will activate the account and fill in the password and other information
 // roleAdmin = privilege-based meaning refers to the level of access, permissions, or authority

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	st "payd/storage"
 	"payd/util"
 	"strconv"
 
@@ -64,24 +63,4 @@ func (a *Auth) Login(ctx context.Context, username, password string) (*Identity,
 		return nil, err
 	}
 	return a.newIdentityStruct(identity.Id, traits, employee), nil
-}
-
-// build identity struct based on kratos traits map and employee table db
-func (a *Auth) newIdentityStruct(kratosId string, traits map[string]interface{}, employee *st.Employee) *Identity {
-	identity := &Identity{}
-	if employee != nil {
-		identity.EmployeeId = strconv.Itoa(employee.ID)
-		identity.EmployeeName = employee.Name
-		identity.PrimaryRole = employee.PrimaryRole
-	}
-	identity.ID = kratosId
-	email, err := castTrait[string](traits, "email")
-	if err == nil {
-		identity.Email = email
-	}
-	role, err := castTrait[string](traits, "role")
-	if err == nil {
-		identity.Role = role
-	}
-	return identity
 }

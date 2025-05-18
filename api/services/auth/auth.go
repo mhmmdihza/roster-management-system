@@ -27,10 +27,15 @@ type storage interface {
 	Rollback(ctx context.Context) error
 }
 
+type AuthInterface interface {
+	Login(ctx context.Context, username, password string) (*Identity, error)
+}
+
 type Auth struct {
 	kratosAdmin  *kratos.APIClient
 	kratosPublic *kratos.APIClient
 	storage      storage
+	jwtSecret    []byte
 }
 
 type AuthOption func(*Auth) error
@@ -68,6 +73,13 @@ func WithKratosPublicURL(url string) AuthOption {
 func WithKratosAdminURL(url string) AuthOption {
 	return func(a *Auth) error {
 		a.kratosAdmin = initKratos(url)
+		return nil
+	}
+}
+
+func WithJWTSecret(secret string) AuthOption {
+	return func(a *Auth) error {
+		a.jwtSecret = []byte(secret)
 		return nil
 	}
 }

@@ -27,7 +27,9 @@ func main() {
 	authSvc := initAuth(st)
 
 	logrus.WithField("port", port).Info("starting...")
-	httpHandler, err := handler.NewHandler(handler.WithAuthSvc(authSvc))
+	validator := util.NewValidator()
+	httpHandler, err := handler.NewHandler(handler.WithAuthSvc(authSvc),
+		handler.WithValidator(validator))
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -40,7 +42,10 @@ func initAuth(st *storage.Storage) *auth.Auth {
 	kratosPubliURL := os.Getenv("KRATO_PUBLIC_URL")
 	kratosAdminUrl := os.Getenv("KRATO_ADMIN_URL")
 
-	authSvc, err := auth.NewAuth(st, auth.WithKratosPublicURL(kratosPubliURL), auth.WithKratosAdminURL(kratosAdminUrl))
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	authSvc, err := auth.NewAuth(st, auth.WithKratosPublicURL(kratosPubliURL), auth.WithKratosAdminURL(kratosAdminUrl),
+		auth.WithJWTSecret(jwtSecret))
 	if err != nil {
 		util.Log().Fatal(err)
 	}
