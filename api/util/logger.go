@@ -1,6 +1,9 @@
 package util
 
 import (
+	"fmt"
+	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -15,8 +18,12 @@ var (
 func InitLogger(level logrus.Level) {
 	once.Do(func() {
 		logger = logrus.New()
+		logger.SetReportCaller(true)
 		logger.SetFormatter(&logrus.TextFormatter{
 			FullTimestamp: true,
+			CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+				return "", fmt.Sprintf("%s:%d", filepath.Base(f.File), f.Line)
+			},
 		})
 		logger.SetLevel(level)
 	})
