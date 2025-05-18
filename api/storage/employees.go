@@ -15,6 +15,10 @@ type Employee struct {
 func (s *Storage) CreateNewEmployee(ctx context.Context, name, status string, roleId int) (int, error) {
 	var id int
 	query := `INSERT INTO employees (name, status, role_id) VALUES ($1, $2, $3) RETURNING id`
+	if t := getTx(ctx); t != nil {
+		err := t.QueryRowContext(ctx, query, name, status, roleId).Scan(&id)
+		return id, err
+	}
 	err := s.db.QueryRowContext(ctx, query, name, status, roleId).Scan(&id)
 	return id, err
 }
