@@ -39,7 +39,7 @@ func TestInsertAndSelectRecord(t *testing.T) {
 			assert.Error(t, err)
 		})
 		t.Run("Invalid Role", func(t *testing.T) {
-			_, err := st.CreateNewEmployee(ctx, "Invalid Role", "ACTIVE", 0)
+			_, err := st.CreateNewEmployee(ctx, "Invalid Role", "ACTIVE", -1)
 			assert.Error(t, err)
 		})
 	})

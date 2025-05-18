@@ -42,7 +42,20 @@ func NewAuth(storage storage, opts ...AuthOption) (*Auth, error) {
 			return nil, err
 		}
 	}
+
 	return auth, nil
+}
+
+func (a *Auth) BootstrapAdminAccount(email, name, password string) error {
+	ctx := context.Background()
+	id, err := a.RegisterNewUser(ctx, email, 0, true)
+	if err == ErrAlreadyExists {
+		return nil
+	}
+	if err := a.ActivateNewUser(ctx, id, name, password); err != nil {
+		return err
+	}
+	return nil
 }
 
 func WithKratosPublicURL(url string) AuthOption {

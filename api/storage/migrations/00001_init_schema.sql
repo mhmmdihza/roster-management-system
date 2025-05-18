@@ -5,6 +5,7 @@ CREATE TABLE roles (
 );
 
 INSERT INTO roles (id,name) VALUES 
+(0,'A'), -- for admin only
 (1,'Cashier'),
 (2,'Cook'),
 (3,'Waiter');

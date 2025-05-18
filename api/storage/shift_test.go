@@ -25,7 +25,7 @@ func TestCreateShift(t *testing.T) {
 		t.Run("Insert shift with invalid role_id should fail", func(t *testing.T) {
 			start := time.Now()
 			end := start.Add(8 * time.Hour)
-			_, err := st.CreateNewShiftSchedule(ctx, 0, start, end) // role_id 0 is invalid (no FK)
+			_, err := st.CreateNewShiftSchedule(ctx, -1, start, end) // role_id 0 is invalid (no FK)
 			assert.Error(t, err)
 		})
 	})
