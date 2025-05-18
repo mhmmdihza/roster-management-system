@@ -14,11 +14,12 @@ var inactiveState = "inactive"
 var activeState = "active"
 
 type Identity struct {
-	ID          string // kratos userid
-	Email       string // registered email
-	EmployeeId  string // db employee id
-	Role        string // privilege-based(admin/employee)
-	PrimaryRole int    // responsibility-based
+	ID           string // kratos userid
+	Email        string // registered email
+	EmployeeId   string // db employee id
+	EmployeeName string // db employee name
+	Role         string // privilege-based(admin/employee)
+	PrimaryRole  int    // responsibility-based from db role_id
 }
 
 // kratos traits schema

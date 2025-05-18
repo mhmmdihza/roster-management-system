@@ -4,18 +4,23 @@ import (
 	"context"
 	"errors"
 
+	st "payd/storage"
+
 	kratos "github.com/ory/kratos-client-go"
 )
 
 var ErrAlreadyExists = errors.New("already exists")
 var ErrInvalidEmail = errors.New("invalid email")
 var ErrInvalidPassword = errors.New("invalid password")
+var ErrInvalidCredential = errors.New("invalid credential")
 var ErrTraitsKeyNotFound = errors.New("key not found")
 var ErrTraitsInvalidType = errors.New("invalid type")
 var ErrNotFound = errors.New("not found")
+var ErrNotYetActivatingAccount = errors.New("the user has not yet activated the account")
 
 type storage interface {
 	CreateNewEmployee(ctx context.Context, name string, status string, roleId int) (int, error)
+	SelectEmployeeByID(ctx context.Context, id int) (*st.Employee, error)
 
 	NewTransacton(ctx context.Context) (context.Context, error)
 	Commit(ctx context.Context) error

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	st "payd/storage"
 	"strings"
 	"testing"
 
@@ -146,7 +147,9 @@ func TestRegisterNewUser(t *testing.T) {
 
 var dbError = errors.New("db error")
 
-type mockStorage struct{}
+type mockStorage struct {
+	selectEmployeeByIDFunc func(ctx context.Context, id int) (*st.Employee, error)
+}
 
 // Commit implements storage.
 func (m *mockStorage) Commit(ctx context.Context) error {
