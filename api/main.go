@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"payd/handler"
 	"payd/util"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -13,7 +15,16 @@ func main() {
 	initLog()
 	logrus := util.Log()
 	logrus.Debug("debug mode")
-	logrus.Info("starting...")
+
+	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
+	if port == ":" {
+		port = ":8080"
+	}
+	logrus.WithField("port", port).Info("starting...")
+	httpHandler := handler.NewHandler()
+	if err := httpHandler.Run(port); err != nil {
+		logrus.Fatal(err)
+	}
 }
 func initLog() {
 	logLevelStr := os.Getenv("LOG_LEVEL")
