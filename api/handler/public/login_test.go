@@ -26,6 +26,10 @@ func (m *MockAuth) Login(ctx context.Context, username, password string) (*auth.
 	return identity, args.Error(1)
 }
 
+func (m *MockAuth) RegisterNewUser(ctx context.Context, email string, primaryRole int, roleAdmin bool) (string, error) {
+	return "", nil
+}
+
 // Sample login request body struct matching your expected input
 type loginRequest struct {
 	Username string `json:"username" validate:"required,email"`

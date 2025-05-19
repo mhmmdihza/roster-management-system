@@ -36,7 +36,7 @@ func (p *Public) login(c *gin.Context) {
 		case auth.ErrNotYetActivatingAccount:
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		default:
-			log.WithContext(ctx).WithError(err).Error("login")
+			log.WithError(err).Error("login")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		}
 		return

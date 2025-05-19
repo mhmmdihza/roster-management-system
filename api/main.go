@@ -28,27 +28,29 @@ func main() {
 	}
 
 	st := initStorage()
-	initRoleCache(ctx, st, 5*time.Second)
+	roleManager := initRoleCache(ctx, st, 5*time.Second)
 	authSvc := initAuth(st)
 
 	logrus.WithField("port", port).Info("starting...")
 	validator := util.NewValidator()
 	httpHandler, err := handler.NewHandler(handler.WithAuthSvc(authSvc),
-		handler.WithValidator(validator))
+		handler.WithValidator(validator),
+		handler.WithRoleManager(roleManager))
 	if err != nil {
-		util.Log().Fatal(err)
+		logrus.Fatal(err)
 	}
 	if err := httpHandler.Run(port); err != nil {
-		util.Log().Fatal(err)
+		logrus.Fatal(err)
 	}
 }
 
 // background process for role cache
-func initRoleCache(ctx context.Context, st *storage.Storage, tick time.Duration) {
+func initRoleCache(ctx context.Context, st *storage.Storage, tick time.Duration) *role.RoleManager {
 	rm := role.NewRoleManager(st, tick)
 	if err := rm.Start(ctx); err != nil {
 		util.Log().Fatal(err)
 	}
+	return rm
 }
 
 func initAuth(st *storage.Storage) *auth.Auth {
