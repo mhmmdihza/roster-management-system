@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import type { RoleResponse } from '$lib/api';
 	import { listRoles, registerUser } from '$lib/api';
 	import { onMount } from 'svelte';
@@ -31,7 +31,7 @@
 				return;
 			}
 			const data = await res.json();
-			const currentUrl = $page.url.origin;
+			const currentUrl = page.url.origin;
 			activationUrl = `${currentUrl}/activate/${data.id}`;
 			showModal = true;
 		} catch (err) {

@@ -55,3 +55,18 @@ export async function listRoles(): Promise<RoleResponse[]> {
 
 	return await response.json();
 }
+
+export interface ActivateAccountRequest {
+	id: string;
+	name: string;
+	password: string;
+}
+
+export async function activateAccount(req: ActivateAccountRequest): Promise<Response> {
+	return fetch(`${BASE_URL}/activate`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(req),
+		credentials: 'include'
+	});
+}
