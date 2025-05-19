@@ -1,19 +1,23 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"payd/handler"
 	"payd/services/auth"
+	"payd/services/role"
 	"payd/storage"
 	"payd/util"
 	"strconv"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
+	ctx := context.Background()
 	initLog()
 	logrus := util.Log()
 	logrus.Debug("debug mode")
@@ -24,6 +28,7 @@ func main() {
 	}
 
 	st := initStorage()
+	initRoleCache(ctx, st, 5*time.Second)
 	authSvc := initAuth(st)
 
 	logrus.WithField("port", port).Info("starting...")
@@ -31,10 +36,18 @@ func main() {
 	httpHandler, err := handler.NewHandler(handler.WithAuthSvc(authSvc),
 		handler.WithValidator(validator))
 	if err != nil {
-		logrus.Fatal(err)
+		util.Log().Fatal(err)
 	}
 	if err := httpHandler.Run(port); err != nil {
-		logrus.Fatal(err)
+		util.Log().Fatal(err)
+	}
+}
+
+// background process for role cache
+func initRoleCache(ctx context.Context, st *storage.Storage, tick time.Duration) {
+	rm := role.NewRoleManager(st, tick)
+	if err := rm.Start(ctx); err != nil {
+		util.Log().Fatal(err)
 	}
 }
 
