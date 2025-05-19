@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"payd/middleware"
 	"payd/services/auth"
 	"payd/services/role"
 
@@ -17,13 +18,14 @@ type Admin struct {
 type Option func(*Admin) error
 
 func NewAdminHandler(router *gin.RouterGroup, opts ...Option) error {
-	public := &Admin{}
+	admin := &Admin{}
 	for _, opt := range opts {
-		if err := opt(public); err != nil {
+		if err := opt(admin); err != nil {
 			return err
 		}
 	}
-	router.POST("/register", public.register)
+	router.Use(middleware.JWTAuthorizeRoles(admin.auth, "admin"))
+	router.POST("/register", admin.register)
 	return nil
 }
 

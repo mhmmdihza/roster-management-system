@@ -20,6 +20,10 @@ type MockAuth struct {
 	mock.Mock
 }
 
+func (m *MockAuth) VerifySignatureJWT(tokenStr string) (*auth.Identity, error) {
+	return nil, nil
+}
+
 func (m *MockAuth) Login(ctx context.Context, username, password string) (*auth.Identity, error) {
 	args := m.Called(ctx, username, password)
 	identity, _ := args.Get(0).(*auth.Identity)

@@ -29,6 +29,8 @@ type storage interface {
 
 type AuthInterface interface {
 	Login(ctx context.Context, username, password string) (*Identity, error)
+	RegisterNewUser(ctx context.Context, email string, primaryRole int, roleAdmin bool) (string, error)
+	VerifySignatureJWT(tokenStr string) (*Identity, error)
 }
 
 type Auth struct {
