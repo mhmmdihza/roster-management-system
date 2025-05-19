@@ -33,6 +33,10 @@ func (m *MockAuthService) RegisterNewUser(ctx context.Context, email string, pri
 	return "", nil
 }
 
+func (m *MockAuthService) ActivateNewUser(ctx context.Context, userId string, name string, password string) error {
+	return nil
+}
+
 func TestJWTAuthorizeRoles(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

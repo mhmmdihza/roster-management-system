@@ -25,6 +25,7 @@ func PublicHandler(router *gin.RouterGroup, opts ...Option) error {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
 	router.POST("/login", public.login)
+	router.POST("/activate", public.activateAccount)
 	return nil
 }
 

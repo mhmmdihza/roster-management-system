@@ -32,6 +32,10 @@ func (m *MockAuth) RegisterNewUser(ctx context.Context, email string, primaryRol
 	return args.String(0), args.Error(1)
 }
 
+func (m *MockAuth) ActivateNewUser(ctx context.Context, userId string, name string, password string) error {
+	return nil
+}
+
 type MockRoleService struct {
 	mock.Mock
 }
