@@ -26,6 +26,7 @@ func NewAdminHandler(router *gin.RouterGroup, opts ...Option) error {
 	}
 	router.Use(middleware.JWTAuthorizeRoles(admin.auth, "admin"))
 	router.POST("/register", admin.register)
+	router.GET("/list-role", admin.listRole)
 	return nil
 }
 
