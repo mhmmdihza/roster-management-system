@@ -10,12 +10,33 @@ import (
 type Public struct {
 	auth      auth.AuthInterface
 	validator *validator.Validate
+	cookie    cookie
+}
+
+type cookie struct {
+	name     string
+	path     string
+	domain   string
+	secure   bool
+	httpOnly bool
+}
+
+func cookieConfig() cookie {
+	return cookie{
+		name:     "token",
+		path:     "/",
+		domain:   "",
+		secure:   true,
+		httpOnly: true,
+	}
 }
 
 type Option func(*Public) error
 
 func PublicHandler(router *gin.RouterGroup, opts ...Option) error {
-	public := &Public{}
+	public := &Public{
+		cookie: cookieConfig(),
+	}
 	for _, opt := range opts {
 		if err := opt(public); err != nil {
 			return err
@@ -25,6 +46,7 @@ func PublicHandler(router *gin.RouterGroup, opts ...Option) error {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
 	router.POST("/login", public.login)
+	router.POST("/logout", public.logout)
 	router.POST("/activate", public.activateAccount)
 	return nil
 }

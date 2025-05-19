@@ -49,13 +49,13 @@ func (p *Public) login(c *gin.Context) {
 	}
 
 	c.SetCookie(
-		"token", // cookie name
-		token,   // value
-		900,     // maxAge in seconds (15 minutes)
-		"/",     // path
-		"",      // domain (empty = current domain)
-		true,    // secure (true = HTTPS only)
-		true,    // httpOnly (not accessible via JS)
+		p.cookie.name,     // cookie name
+		token,             // value
+		900,               // maxAge in seconds (15 minutes)
+		p.cookie.path,     // path
+		p.cookie.domain,   // domain (empty = current domain)
+		p.cookie.httpOnly, // secure (true = HTTPS only)
+		true,              // httpOnly (not accessible via JS)
 	)
 
 	c.JSON(http.StatusOK, gin.H{

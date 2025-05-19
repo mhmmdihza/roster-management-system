@@ -125,6 +125,7 @@ func TestPublicLogin(t *testing.T) {
 			p := &Public{
 				auth:      mockAuth,
 				validator: validate,
+				cookie:    cookieConfig(),
 			}
 
 			router := gin.New()
