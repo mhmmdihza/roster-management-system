@@ -4,4 +4,4 @@
 	let { data }: PageProps = $props();
 </script>
 
-asdasd
+welcome

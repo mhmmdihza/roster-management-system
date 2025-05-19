@@ -16,3 +16,42 @@ export async function logout() {
 		credentials: 'include'
 	});
 }
+
+export async function registerUser(
+	email: string,
+	primaryRole: number | null,
+	roleAdmin: boolean
+): Promise<Response> {
+	const body: Record<string, unknown> = {
+		email,
+		roleAdmin
+	};
+
+	if (!roleAdmin) {
+		body.primaryRole = primaryRole;
+	}
+
+	return fetch(`${BASE_URL}/admin/register`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(body),
+		credentials: 'include'
+	});
+}
+
+export interface RoleResponse {
+	id: number;
+	roleName: string;
+}
+export async function listRoles(): Promise<RoleResponse[]> {
+	const response = await fetch(`${BASE_URL}/admin/list-role`, {
+		method: 'GET',
+		credentials: 'include'
+	});
+
+	if (!response.ok) {
+		throw new Error(`Failed to fetch roles: ${response.statusText}`);
+	}
+
+	return await response.json();
+}
