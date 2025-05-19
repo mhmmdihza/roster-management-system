@@ -10,6 +10,7 @@ import (
 	"payd/storage"
 	"payd/util"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -35,7 +36,15 @@ func main() {
 	validator := util.NewValidator()
 	httpHandler, err := handler.NewHandler(handler.WithAuthSvc(authSvc),
 		handler.WithValidator(validator),
-		handler.WithRoleManager(roleManager))
+		handler.WithRoleManager(roleManager),
+		func() handler.Option {
+			origins := os.Getenv("CORS_ORIGINS")
+			allowedOrigins := []string{"*"}
+			if origins != "" {
+				allowedOrigins = strings.Split(origins, ",")
+			}
+			return handler.WithAllowedOrigins(allowedOrigins)
+		}())
 	if err != nil {
 		logrus.Fatal(err)
 	}

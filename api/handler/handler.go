@@ -5,7 +5,9 @@ import (
 	"payd/handler/public"
 	"payd/services/auth"
 	"payd/services/role"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -57,6 +59,20 @@ func WithRoleManager(role role.RoleManagerInterface) Option {
 func WithValidator(validator *validator.Validate) Option {
 	return func(s *Handler) error {
 		s.validator = validator
+		return nil
+	}
+}
+
+func WithAllowedOrigins(allowedOrigins []string) Option {
+	return func(s *Handler) error {
+		s.Use(cors.New(cors.Config{
+			AllowOrigins:     allowedOrigins,
+			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+			AllowCredentials: true,
+			MaxAge:           12 * time.Hour,
+		}))
 		return nil
 	}
 }
