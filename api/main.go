@@ -7,6 +7,7 @@ import (
 	"payd/handler"
 	"payd/services/auth"
 	"payd/services/role"
+	"payd/services/shift"
 	"payd/storage"
 	"payd/util"
 	"strconv"
@@ -31,10 +32,12 @@ func main() {
 	st := initStorage()
 	roleManager := initRoleCache(ctx, st, 5*time.Second)
 	authSvc := initAuth(st)
+	shiftSvc := initShift(st)
 
 	logrus.WithField("port", port).Info("starting...")
 	validator := util.NewValidator()
 	httpHandler, err := handler.NewHandler(handler.WithAuthSvc(authSvc),
+		handler.WithShiftSvc(shiftSvc),
 		handler.WithValidator(validator),
 		handler.WithRoleManager(roleManager),
 		func() handler.Option {
@@ -60,6 +63,10 @@ func initRoleCache(ctx context.Context, st *storage.Storage, tick time.Duration)
 		util.Log().Fatal(err)
 	}
 	return rm
+}
+
+func initShift(st *storage.Storage) *shift.Shift {
+	return shift.NewShift(st)
 }
 
 func initAuth(st *storage.Storage) *auth.Auth {

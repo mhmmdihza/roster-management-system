@@ -5,6 +5,7 @@ import (
 	"payd/handler/public"
 	"payd/services/auth"
 	"payd/services/role"
+	"payd/services/shift"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -17,6 +18,7 @@ type Handler struct {
 	auth      auth.AuthInterface
 	validator *validator.Validate
 	role      role.RoleManagerInterface
+	shift     shift.ShiftInterface
 }
 
 type Option func(*Handler) error
@@ -36,11 +38,20 @@ func NewHandler(opts ...Option) (*Handler, error) {
 		return nil, err
 	}
 	if err := admin.NewAdminHandler(router.Group("/admin"),
-		admin.WithAuthSvc(handler.auth), admin.WithValidator(handler.validator),
+		admin.WithAuthSvc(handler.auth),
+		admin.WithValidator(handler.validator),
+		admin.WithShiftSvc(handler.shift),
 		admin.WithRoleManager(handler.role)); err != nil {
 		return nil, err
 	}
 	return handler, nil
+}
+
+func WithShiftSvc(shift shift.ShiftInterface) Option {
+	return func(s *Handler) error {
+		s.shift = shift
+		return nil
+	}
 }
 
 func WithAuthSvc(auth auth.AuthInterface) Option {

@@ -4,6 +4,7 @@ import (
 	"payd/middleware"
 	"payd/services/auth"
 	"payd/services/role"
+	"payd/services/shift"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -12,6 +13,7 @@ import (
 type Admin struct {
 	auth      auth.AuthInterface
 	role      role.RoleManagerInterface
+	shift     shift.ShiftInterface
 	validator *validator.Validate
 }
 
@@ -27,7 +29,16 @@ func NewAdminHandler(router *gin.RouterGroup, opts ...Option) error {
 	router.Use(middleware.JWTAuthorizeRoles(admin.auth, "admin"))
 	router.POST("/register", admin.register)
 	router.GET("/list-role", admin.listRole)
+	router.POST("/schedules", admin.createNewShiftSchedule)
+
 	return nil
+}
+
+func WithShiftSvc(shift shift.ShiftInterface) Option {
+	return func(s *Admin) error {
+		s.shift = shift
+		return nil
+	}
 }
 
 func WithAuthSvc(auth auth.AuthInterface) Option {
