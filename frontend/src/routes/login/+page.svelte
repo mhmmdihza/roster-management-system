@@ -1,9 +1,17 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { login } from '$lib/api';
+	import ButtonSubmit from '$lib/components/ButtonSubmit.svelte';
+	import TextInput from '$lib/components/TextInput.svelte';
+	import { z } from 'zod';
 
 	let username = '';
+	let usernameErrValidation = 'x'; // this non empty value will disable the button at init
+	const usernameSchema = z.string().email('Invalid email format').min(5, 'Too short');
 	let password = '';
+	let passwordErrValidation = 'x';
+	const passwordSchema = z.string().min(6, 'Too short');
+
 	let error = '';
 	let loading = false;
 
@@ -40,38 +48,30 @@
 			</div>
 		{/if}
 
-		<input
-			class="mb-4 w-full rounded border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+		<TextInput
+			id="username"
 			placeholder="Username"
+			type="email"
 			bind:value={username}
+			schema={usernameSchema}
 			disabled={loading}
+			bind:errorValidation={usernameErrValidation}
 		/>
 
-		<input
-			class="mb-6 w-full rounded border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
-			type="password"
+		<TextInput
+			id="password"
 			placeholder="Password"
+			type="password"
 			bind:value={password}
+			schema={passwordSchema}
 			disabled={loading}
+			bind:errorValidation={passwordErrValidation}
 		/>
-
-		<button
-			class="flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
-			type="submit"
-			disabled={loading}
-		>
-			{#if loading}
-				<!-- Spinner -->
-				<svg class="h-5 w-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
-					></circle>
-					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-					></path>
-				</svg>
-				<span>Logging in...</span>
-			{:else}
-				Login
-			{/if}
-		</button>
+		<ButtonSubmit
+			{loading}
+			text="Login"
+			textOnLoading="Logging in..."
+			disabled={usernameErrValidation !== '' || passwordErrValidation !== ''}
+		/>
 	</form>
 </div>

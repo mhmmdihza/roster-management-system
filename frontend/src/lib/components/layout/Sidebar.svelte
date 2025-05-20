@@ -2,7 +2,10 @@
 	export let role: string;
 	let links =
 		role === 'admin'
-			? [{ name: 'Register New User', href: '/admin/register' }]
+			? [
+					{ name: 'Register New User', href: '/admin/register' },
+					{ name: 'Shifts', href: '/admin/shifts' }
+				]
 			: [{ name: 'shifts', href: '/employee/shifts' }];
 </script>
 

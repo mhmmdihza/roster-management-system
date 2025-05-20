@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { userStore } from '$lib/auth';
-	import Sidebar from '$lib/layout/Sidebar.svelte';
-	import Topbar from '$lib/layout/Topbar.svelte';
+	import Sidebar from '$lib/components/layout/Sidebar.svelte';
+	import Topbar from '$lib/components/layout/Topbar.svelte';
 	let { data, children } = $props();
 
 	import '../../app.css';
