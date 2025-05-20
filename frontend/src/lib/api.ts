@@ -70,3 +70,20 @@ export async function activateAccount(req: ActivateAccountRequest): Promise<Resp
 		credentials: 'include'
 	});
 }
+
+export interface CreateNewShiftScheduleRequest {
+	roleId: number;
+	startTime: string;
+	endTime: string;
+}
+
+export async function createNewShiftSchedule(
+	req: CreateNewShiftScheduleRequest
+): Promise<Response> {
+	return fetch(`${BASE_URL}/admin/schedules`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(req),
+		credentials: 'include'
+	});
+}

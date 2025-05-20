@@ -1,26 +1,54 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import type { RoleResponse } from '$lib/api';
-	import { listRoles, registerUser } from '$lib/api';
-	import { onMount } from 'svelte';
+	import { registerUser } from '$lib/api';
+	import ButtonSubmit from '$lib/components/ButtonSubmit.svelte';
+	import SelectField from '$lib/components/SelectField.svelte';
+	import TextInput from '$lib/components/TextInput.svelte';
+	import { z } from 'zod';
+	import type { PageData } from './$types';
+
+	export let data: PageData;
 
 	let email = '';
+	let emailErrValidation = 'x'; // disable button on init
+	const emailSchema = z.string().email('Invalid email format').min(5, 'Too short');
 	let roleAdmin = false;
 	let primaryRole: number | null = null;
+	let roleErrValidation = 'x';
+	let roles: RoleResponse[] = data.roles;
 
-	let roles: RoleResponse[] = [];
+	const roleSchema = z
+		.object({
+			roleAdmin: z.boolean(),
+			primaryRole: z.number().nullable()
+		})
+		.superRefine((data, ctx) => {
+			if (!data.roleAdmin && (!data.primaryRole || data.primaryRole < 1)) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: 'Role is required when is admin not checked',
+					path: ['primaryRole']
+				});
+			}
+		});
+
+	function validateRole() {
+		const result = roleSchema.safeParse({
+			roleAdmin: roleAdmin,
+			primaryRole: primaryRole
+		});
+
+		if (!result.success) {
+			return result.error.errors[0]?.message ?? 'Invalid option';
+		}
+		return '';
+	}
+
 	let showModal = false;
 	let activationUrl = '';
 	let copied = false;
-
-	onMount(async () => {
-		try {
-			const allRoles = await listRoles();
-			roles = allRoles.filter((role) => role.id !== 0);
-		} catch (err) {
-			console.error('Failed to load roles:', err);
-		}
-	});
+	let loading = false;
 
 	async function handleSubmit() {
 		try {
@@ -53,12 +81,14 @@
 	<form on:submit|preventDefault={handleSubmit} class="space-y-4">
 		<div>
 			<label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-			<input
+			<TextInput
 				id="email"
+				placeholder="Email"
 				type="email"
 				bind:value={email}
-				required
-				class="mt-1 w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+				schema={emailSchema}
+				disabled={loading}
+				bind:errorValidation={emailErrValidation}
 			/>
 		</div>
 
@@ -67,34 +97,31 @@
 				id="admin"
 				type="checkbox"
 				bind:checked={roleAdmin}
+				on:change={validateRole}
 				class="h-4 w-4 rounded border-gray-300 text-blue-600"
+				disabled={loading}
 			/>
 			<label for="admin" class="text-sm text-gray-700">Is Admin?</label>
 		</div>
 
 		{#if !roleAdmin}
-			<div>
-				<label for="primaryRole" class="block text-sm font-medium text-gray-700">Primary Role</label
-				>
-				<select
-					id="primaryRole"
-					bind:value={primaryRole}
-					class="mt-1 w-full rounded-md border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-				>
-					<option value="" disabled selected>Select a role</option>
-					{#each roles as role}
-						<option value={role.id}>{role.roleName}</option>
-					{/each}
-				</select>
-			</div>
+			<label for="primaryRole" class="block text-sm font-medium text-gray-700">Primary Role</label>
+			<SelectField
+				id="primaryRole"
+				bind:value={primaryRole}
+				options={roles.map((r) => ({ id: r.id, label: r.roleName }))}
+				disabled={loading}
+				validate={validateRole}
+				bind:errorValidation={roleErrValidation}
+			/>
 		{/if}
 
-		<button
-			type="submit"
-			class="w-full rounded-md bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-		>
-			Register
-		</button>
+		<ButtonSubmit
+			{loading}
+			text="Register"
+			textOnLoading="processing..."
+			disabled={emailErrValidation !== '' || roleErrValidation !== ''}
+		/>
 	</form>
 </section>
 
