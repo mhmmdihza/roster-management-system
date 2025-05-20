@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { login } from '$lib/api';
 	import ButtonSubmit from '$lib/components/ButtonSubmit.svelte';
 	import TextInput from '$lib/components/TextInput.svelte';
@@ -23,6 +23,7 @@
 			const data = await res.json();
 
 			if (res.ok) {
+				await invalidateAll();
 				goto('/');
 			} else {
 				error = data?.error || data?.message || 'Login failed.';

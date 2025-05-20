@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { logout } from '$lib/api';
 	export let data;
 
 	async function handleLogout() {
 		await logout();
+		await invalidateAll();
 		goto('/login');
 	}
 </script>
